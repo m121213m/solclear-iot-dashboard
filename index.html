@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HCT solar panel AI monitoring</title>
+    <style>
+      :root {
+        --bg: #05070f;
+        --bg-alt: rgba(17, 24, 39, 0.85);
+        --card: rgba(15, 18, 33, 0.8);
+        --border: rgba(255, 255, 255, 0.08);
+        --text: #f8fafc;
+        --muted: #9ba3b4;
+        --accent: #4ade80;
+        --accent-soft: rgba(74, 222, 128, 0.15);
+        --danger: #f87171;
+        --danger-soft: rgba(248, 113, 113, 0.15);
+        --warning: #facc15;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: radial-gradient(circle at top, rgba(14, 26, 48, 0.9), var(--bg));
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+      }
+
+      .glass-card {
+        width: min(1200px, 100%);
+        background: var(--bg-alt);
+        border-radius: 30px;
+        border: 1px solid var(--border);
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+        padding: 40px;
+        backdrop-filter: blur(18px);
+        display: flex;
+        flex-direction: column;
+        gap: 32px;
+      }
+
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 24px;
+      }
+
+      .logo {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(74, 222, 128, 0.15), rgba(59, 130, 246, 0.25));
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+      }
+
+      .hero-text {
+        flex: 1;
+        min-width: 250px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(1.6rem, 4vw, 2.4rem);
+      }
+
+      p.subtitle {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 1rem;
+      }
+
+      .badge {
+        padding: 10px 18px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        font-size: 0.95rem;
+        white-space: nowrap;
+      }
+
+      .content-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 24px;
+      }
+
+      .card {
+        background: var(--card);
+        border-radius: 24px;
+        border: 1px solid var(--border);
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 60%);
+        opacity: 0.4;
+      }
+
+      .card > * {
+        position: relative;
+        z-index: 1;
+      }
+
+      .card h2 {
+        margin: 0;
+        font-size: 1.3rem;
+      }
+
+      .gauge-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .gauge-ring {
+        width: 220px;
+        height: 220px;
+        border-radius: 50%;
+        background: conic-gradient(var(--accent) var(--power-degree, 0deg), rgba(255, 255, 255, 0.08) 0deg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        position: relative;
+        transition: background 0.8s ease;
+      }
+
+      .gauge-ring::before {
+        content: "";
+        position: absolute;
+        inset: 12px;
+        border-radius: 50%;
+        background: rgba(5, 7, 15, 0.75);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .gauge-value {
+        position: relative;
+        text-align: center;
+        z-index: 1;
+      }
+
+      .gauge-value .watts {
+        font-size: 2.6rem;
+        font-weight: 700;
+      }
+
+      .gauge-value .label,
+      .gauge-value .percent-line {
+        font-size: 0.95rem;
+        color: var(--muted);
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+      }
+
+      .chip {
+        padding: 6px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+
+      .last-update {
+        font-size: 0.85rem;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 999px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .status-badge .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+
+      .status-badge.clean {
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+
+      .status-badge.clean .dot {
+        background: var(--accent);
+        box-shadow: 0 0 8px var(--accent);
+      }
+
+      .status-badge.dirty {
+        background: var(--danger-soft);
+        color: var(--danger);
+      }
+
+      .status-badge.dirty .dot {
+        background: var(--danger);
+        box-shadow: 0 0 8px var(--danger);
+      }
+
+      .condition-title {
+        font-size: 1.4rem;
+        margin: 0;
+      }
+
+      .condition-desc {
+        color: var(--muted);
+        margin: 0;
+        line-height: 1.6;
+      }
+
+      .meta {
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        color: var(--muted);
+        font-size: 0.95rem;
+        display: grid;
+        gap: 4px;
+      }
+
+      footer {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .live-indicator {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .live-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 10px var(--accent);
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(0.9);
+          opacity: 0.7;
+        }
+        50% {
+          transform: scale(1.2);
+          opacity: 1;
+        }
+        100% {
+          transform: scale(0.9);
+          opacity: 0.7;
+        }
+      }
+
+      button.refresh {
+        border: none;
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text);
+        padding: 10px 18px;
+        border-radius: 999px;
+        cursor: pointer;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.3s ease, transform 0.2s ease;
+      }
+
+      button.refresh:hover {
+        background: rgba(255, 255, 255, 0.18);
+        transform: translateY(-1px);
+      }
+
+      button.refresh:active {
+        transform: translateY(0);
+      }
+
+      .status-text {
+        color: var(--muted);
+        font-size: 0.85rem;
+        margin-top: 4px;
+      }
+
+      @media (max-width: 768px) {
+        body {
+          padding: 20px 10px;
+        }
+
+        .glass-card {
+          padding: 24px;
+        }
+
+        header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .badge {
+          align-self: flex-start;
+        }
+
+        .gauge-ring {
+          width: 180px;
+          height: 180px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="glass-card">
+      <header>
+        <div class="logo">HCT</div>
+        <div class="hero-text">
+          <h1>HCT solar panel AI monitoring</h1>
+          <p class="subtitle">
+            Real-time dust &amp; performance insights from Raspberry Pi + deep learning.
+          </p>
+        </div>
+        <div class="badge">AI-powered PV health · RAK campus</div>
+      </header>
+
+      <section class="content-grid">
+        <article class="card gauge-card">
+          <div class="gauge-wrapper">
+            <div class="gauge-ring" id="gauge">
+              <div class="gauge-value">
+                <div class="watts" id="powerWatts">--</div>
+                <div class="label">Watts (AI estimate)</div>
+                <div class="percent-line" id="powerPercentLine">--</div>
+              </div>
+            </div>
+            <div class="chips">
+              <div class="chip">Time slot: <span id="timeChip">--:--</span></div>
+              <div class="chip">Day: <span id="dayChip">----</span></div>
+              <div class="chip">Normalized: <span id="normChip">n/a</span></div>
+            </div>
+            <div class="last-update">Last update: <span id="lastUpdate">--</span></div>
+          </div>
+        </article>
+
+        <article class="card condition-card">
+          <div class="card-top" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <h2 style="margin:0;">Panel condition</h2>
+            <div class="confidence" id="confidence">Model confidence: n/a</div>
+          </div>
+          <div>
+            <div class="status-badge" id="statusBadge">
+              <span class="dot"></span>
+              <span id="conditionLabel">--</span>
+            </div>
+          </div>
+          <h3 class="condition-title" id="conditionTitle">Awaiting data…</h3>
+          <p class="condition-desc" id="conditionDesc">
+            The dashboard will populate as soon as the CSV is fetched.
+          </p>
+          <div class="meta">
+            <div>Timestamp: <span id="metaTimestamp">--</span></div>
+            <div>Image source: Raspberry Pi 5 · camera</div>
+            <div>Data pipeline: Pi → panel_state_log.csv → GitHub → this dashboard</div>
+          </div>
+        </article>
+      </section>
+
+      <footer>
+        <div>
+          <div class="live-indicator">
+            <div class="live-dot"></div>
+            <div>Dashboard is live. Refresh happens every 60 seconds.</div>
+          </div>
+          <div class="status-text" id="statusText">Waiting for data…</div>
+        </div>
+        <button class="refresh" id="refreshBtn" type="button">
+          ⟳ Refresh now
+        </button>
+      </footer>
+    </main>
+
+    <script>
+      const CSV_URL =
+        "https://raw.githubusercontent.com/m121213m/solclear-iot-dashboard/main/panel_state_log.csv";
+
+      // Column names in the hosted dataset. Update here if the CSV schema changes.
+      const COL_TIMESTAMP = "timestamp_compact";
+      const COL_POWER_W = "power_W_mean";
+      const COL_POWER_N = ""; // optional / not available in this dataset
+      const COL_COND = "condition_final";
+      const COL_P_DIRTY = "p_dirty_mean";
+
+      const P_REF_W = 75;
+      const REFRESH_INTERVAL = 60_000;
+
+      const gaugeEl = document.getElementById("gauge");
+      const powerWattsEl = document.getElementById("powerWatts");
+      const powerPercentLineEl = document.getElementById("powerPercentLine");
+      const timeChipEl = document.getElementById("timeChip");
+      const dayChipEl = document.getElementById("dayChip");
+      const normChipEl = document.getElementById("normChip");
+      const lastUpdateEl = document.getElementById("lastUpdate");
+      const statusBadgeEl = document.getElementById("statusBadge");
+      const conditionLabelEl = document.getElementById("conditionLabel");
+      const conditionTitleEl = document.getElementById("conditionTitle");
+      const conditionDescEl = document.getElementById("conditionDesc");
+      const confidenceEl = document.getElementById("confidence");
+      const metaTimestampEl = document.getElementById("metaTimestamp");
+      const statusTextEl = document.getElementById("statusText");
+      const refreshBtn = document.getElementById("refreshBtn");
+
+      async function loadLatest(triggerSource = "auto") {
+        statusTextEl.textContent = triggerSource === "button" ? "Refreshing…" : "Fetching latest data…";
+        try {
+          const response = await fetch(`${CSV_URL}?t=${Date.now()}`);
+          if (!response.ok) {
+            throw new Error(`Fetch failed with status ${response.status}`);
+          }
+          const text = await response.text();
+          const latest = parseLatestRow(text);
+          updateUI(latest);
+          statusTextEl.textContent = `Updated successfully at ${new Date().toLocaleTimeString()}`;
+        } catch (error) {
+          console.error("Failed to load latest panel data", error);
+          statusTextEl.textContent = "Unable to fetch data right now. Please try again later.";
+        }
+      }
+
+      function parseLatestRow(csvText) {
+        const lines = csvText
+          .split(/\r?\n/)
+          .map((line) => line.trim())
+          .filter((line) => line.length);
+
+        if (lines.length < 2) {
+          throw new Error("CSV does not have enough data rows");
+        }
+
+        const headers = lines[0].split(",").map((h) => h.trim());
+        const lastLine = lines[lines.length - 1];
+        const cells = lastLine.split(",").map((cell) => cell.trim());
+
+        const idxTs = headers.indexOf(COL_TIMESTAMP);
+        const idxPw = headers.indexOf(COL_POWER_W);
+        const idxCond = headers.indexOf(COL_COND);
+
+        if (idxTs === -1 || idxPw === -1 || idxCond === -1) {
+          throw new Error("Required columns missing in CSV");
+        }
+
+        const idxPn = headers.indexOf(COL_POWER_N);
+        const idxPD = headers.indexOf(COL_P_DIRTY);
+
+        return {
+          rawTs: cells[idxTs] ?? "",
+          rawPow: parseFloatSafe(cells[idxPw]),
+          rawNorm: idxPn !== -1 ? parseFloatSafe(cells[idxPn]) : null,
+          rawCond: (cells[idxCond] || "").toLowerCase(),
+          rawPD: idxPD !== -1 ? parseFloatSafe(cells[idxPD]) : null,
+        };
+      }
+
+      function parseFloatSafe(value) {
+        const num = parseFloat(value);
+        return Number.isFinite(num) ? num : null;
+      }
+
+      function formatTimestamp(rawTs) {
+        const match = rawTs && rawTs.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})$/);
+        if (!match) {
+          return {
+            nice: rawTs || "--",
+            timeSlot: "--",
+            day: "--",
+          };
+        }
+        const [, y, m, d, hh, mm] = match;
+        return {
+          nice: `${y}-${m}-${d} ${hh}:${mm}`,
+          timeSlot: `${hh}:${mm}`,
+          day: `${y}-${m}-${d}`,
+        };
+      }
+
+      function updateUI(data) {
+        const { rawTs, rawPow, rawNorm, rawCond, rawPD } = data;
+        const timeInfo = formatTimestamp(rawTs);
+
+        const power = rawPow ?? 0;
+        const percent = P_REF_W > 0 ? Math.min((power / P_REF_W) * 100, 130) : 0;
+        const angle = (percent / 100) * 360;
+        gaugeEl.style.setProperty("--power-degree", `${angle}deg`);
+        powerWattsEl.textContent = rawPow != null ? power.toFixed(1) : "n/a";
+        powerPercentLineEl.textContent = rawPow != null ? `${Math.round((power / P_REF_W) * 100)}% of ${P_REF_W} W` : `Reference: ${P_REF_W} W`;
+
+        normChipEl.textContent = rawNorm != null ? `${rawNorm.toFixed(2)} (${Math.round(rawNorm * 100)}%)` : "n/a";
+        timeChipEl.textContent = timeInfo.timeSlot;
+        dayChipEl.textContent = timeInfo.day;
+        lastUpdateEl.textContent = timeInfo.nice;
+
+        const normalizedCond = rawCond === "dirty" ? "dirty" : "clean";
+        statusBadgeEl.classList.toggle("clean", normalizedCond === "clean");
+        statusBadgeEl.classList.toggle("dirty", normalizedCond === "dirty");
+        conditionLabelEl.textContent = normalizedCond.toUpperCase();
+
+        if (normalizedCond === "dirty") {
+          conditionTitleEl.textContent = "Panel requires cleaning soon";
+          conditionDescEl.textContent = "Dust or soiling has been detected. Scheduling a cleaning cycle will help recover power output and maintain efficiency.";
+        } else {
+          conditionTitleEl.textContent = "Panel is operating normally";
+          conditionDescEl.textContent = "The AI model indicates the module appears clean. Continue periodic inspections to keep performance on track.";
+        }
+
+        const confidence = clamp01(rawPD);
+        if (confidence != null) {
+          const confPercent = normalizedCond === "dirty" ? confidence * 100 : (1 - confidence) * 100;
+          confidenceEl.textContent = `Model confidence: ${confPercent.toFixed(1)} %`;
+        } else {
+          confidenceEl.textContent = "Model confidence: n/a";
+        }
+
+        metaTimestampEl.textContent = timeInfo.nice;
+      }
+
+      function clamp01(value) {
+        if (typeof value !== "number" || !Number.isFinite(value)) return null;
+        if (value > 1) return 1;
+        if (value < 0) return 0;
+        return value;
+      }
+
+      refreshBtn.addEventListener("click", () => loadLatest("button"));
+      loadLatest();
+      setInterval(loadLatest, REFRESH_INTERVAL);
+    </script>
+  </body>
+</html>
