@@ -1,0 +1,127 @@
+<script>
+const CSV_URL = "panel_state_log.csv";   // same folder as index.html
+const REFRESH_MS = 60000;                // 60s
+
+function pickCol(cols, options) {
+  for (const name of options) {
+    const i = cols.indexOf(name);
+    if (i !== -1) return i;
+  }
+  return -1;
+}
+
+async function loadCsvText() {
+  const res = await fetch(CSV_URL + "?cacheBust=" + Date.now());
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  return await res.text();
+}
+
+function parseLastRow(text) {
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+  if (lines.length <= 1) return null;      // header only
+
+  const header = lines[0].split(",").map(h => h.trim());
+  const last   = lines[lines.length - 1].split(",").map(v => v.trim());
+
+  const idxTs   = pickCol(header, ["timestamp","Timestamp","ts"]);
+  const idxCond = pickCol(header, ["condition","Condition","panel_condition"]);
+  const idxPow  = pickCol(header, ["pred_power_W","power_W_pred","power_W","predicted_power_W"]);
+  const idxNorm = pickCol(header, ["power_norm","pred_norm","power_norm_pred","predicted_power_norm"]);
+  const idxPD   = pickCol(header, ["p_dirty","prob_dirty","dirty_prob"]);
+
+  if (idxTs === -1 || idxCond === -1 || idxPow === -1) {
+    // Cannot interpret this CSV
+    throw new Error("Missing required columns in CSV header: " + header.join(","));
+  }
+
+  const row = {
+    timestamp: last[idxTs],
+    condition: last[idxCond].toLowerCase(),
+    power_W: parseFloat(last[idxPow]),
+    power_norm: idxNorm !== -1 ? parseFloat(last[idxNorm]) : NaN,
+    p_dirty: idxPD !== -1 ? parseFloat(last[idxPD]) : NaN
+  };
+  return row;
+}
+
+function setText(id, txt) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = txt;
+}
+
+function setStatus(ok, msg) {
+  const status = document.getElementById("status-text");
+  const dot = document.getElementById("status-dot");
+  if (status) status.textContent = msg;
+  if (dot) dot.style.backgroundColor = ok ? "#2ecc71" : "#e74c3c";
+}
+
+async function refreshDashboard() {
+  try {
+    setStatus(true, "Fetching latest data from GitHub…");
+    const text = await loadCsvText();
+    const row = parseLastRow(text);
+
+    if (!row) {
+      // header only or no rows
+      setText("power-value", "--");
+      setText("power-unit", "Watts (AI estimate)");
+      setText("norm-value", "n/a");
+      setText("time-slot", "--:--");
+      setText("day-label", "----");
+      setText("panel-condition", "--");
+      setText("panel-confidence", "n/a");
+      setText("timestamp-label", "--");
+      setText("last-update", new Date().toLocaleString());
+      setStatus(false, "CSV has no data rows yet.");
+      return;
+    }
+
+    // format values
+    const powerStr = Number.isFinite(row.power_W) ? row.power_W.toFixed(1) : "--";
+    const normStr  = Number.isFinite(row.power_norm) ? row.power_norm.toFixed(3) : "n/a";
+    const condPretty = row.condition === "dirty" ? "Dirty" :
+                       row.condition === "clean" ? "Clean" : row.condition;
+    const pDirtyStr = Number.isFinite(row.p_dirty) ? (row.p_dirty * 100).toFixed(1) + "%" : "n/a";
+
+    // split timestamp into date & time if possible
+    let timeStr = row.timestamp;
+    let dayStr = "----";
+    const m = row.timestamp.match(/^(\d{4}-?\d{2}-?\d{2})[T_ ]?(\d{2}:\d{2}(:\d{2})?)?/);
+    if (m) {
+      dayStr = m[1];
+      if (m[2]) timeStr = m[2].slice(0,5);
+    }
+
+    // update UI
+    setText("power-value", powerStr);
+    setText("power-unit", "Watts (AI estimate)");
+    setText("norm-value", normStr);
+    setText("time-slot", timeStr);
+    setText("day-label", dayStr);
+    setText("panel-condition", condPretty);
+    setText("panel-confidence", pDirtyStr);
+    setText("timestamp-label", row.timestamp);
+    setText("last-update", new Date().toLocaleString());
+    setStatus(true, "Dashboard is live. Next automatic refresh in 60 seconds.");
+  } catch (err) {
+    console.error("Error loading dashboard data:", err);
+    setText("power-value", "--");
+    setText("power-unit", "Watts (AI estimate)");
+    setText("norm-value", "n/a");
+    setText("time-slot", "--:--");
+    setText("day-label", "----");
+    setText("panel-condition", "--");
+    setText("panel-confidence", "n/a");
+    setText("timestamp-label", "--");
+    setText("last-update", "--");
+    setStatus(false, "Unable to fetch data right now. Please check CSV path / headers.");
+  }
+}
+
+document.getElementById("refresh-button")?.addEventListener("click", refreshDashboard);
+
+// first load + auto refresh
+refreshDashboard();
+setInterval(refreshDashboard, REFRESH_MS);
+</script>
