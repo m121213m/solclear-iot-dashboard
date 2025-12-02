@@ -16,8 +16,5 @@ timestamp_iso,timestamp_compact,image_paths,p_dirty_1,p_dirty_2,p_dirty_3,p_dirt
 2025-11-29T12:30:11,20251129_123011,/home/mohammed/Desktop/SolClear/captured/20251129_123010_1.jpg|/home/mohammed/Desktop/SolClear/captured/20251129_123011_2.jpg|/home/mohammed/Desktop/SolClear/captured/20251129_123012_3.jpg,0.623619,0.599491,0.589996,0.604369,clean,0,76.6420,75.4328,74.4468,75.5072,-0.130526,-0.991445,0.254921,0.092009
 2025-11-30T12:30:11,20251130_123011,/home/mohammed/Desktop/SolClear/captured/20251130_123010_1.jpg|/home/mohammed/Desktop/SolClear/captured/20251130_123011_2.jpg|/home/mohammed/Desktop/SolClear/captured/20251130_123012_3.jpg,0.719629,0.646843,0.636763,0.667745,clean,0,83.7293,80.9922,81.1330,81.9515,-0.130526,-0.991445,0.199398,0.085359
 2025-12-01T12:30:11,20251201_123011,/home/mohammed/Desktop/SolClear/captured/20251201_123010_1.jpg|/home/mohammed/Desktop/SolClear/captured/20251201_123011_2.jpg|/home/mohammed/Desktop/SolClear/captured/20251201_123012_3.jpg,0.712819,0.698030,0.701397,0.704082,clean,0,80.3162,82.0514,79.5145,80.6274,-0.130526,-0.991445,0.184065,0.082561
-<<<<<<< HEAD
- 73f90c5 (Auto update panel_state_log.csv at 2025-12-01 12:34:31)
-=======
 2025-12-02T12:30:11,20251202_123011,/home/mohammed/Desktop/SolClear/captured/20251202_123010_1.jpg|/home/mohammed/Desktop/SolClear/captured/20251202_123011_2.jpg|/home/mohammed/Desktop/SolClear/captured/20251202_123012_3.jpg,0.752477,0.776591,0.763904,0.764324,clean,0,81.6257,80.6469,81.3761,81.2163,-0.130526,-0.991445,0.180425,0.079758
->>>>>>> 378eefd (Auto update panel_state_log.csv at 2025-12-02 12:34:33)
+ 378eefd (Auto update panel_state_log.csv at 2025-12-02 12:34:33)
