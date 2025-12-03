@@ -15,3 +15,4 @@ timestamp_iso,timestamp_compact,image_paths,p_dirty_1,p_dirty_2,p_dirty_3,p_dirt
 =======
 2025-11-28T12:30:11,20251128_123011,/home/mohammed/Desktop/SolClear/captured/20251128_123010_1.jpg|/home/mohammed/Desktop/SolClear/captured/20251128_123011_2.jpg|/home/mohammed/Desktop/SolClear/captured/20251128_123012_3.jpg,0.642547,0.644085,0.699717,0.662116,clean,0,85.8983,88.5107,88.3834,87.5975,-0.130526,-0.991445,0.688908,0.084996
 >>>>>>> 54f249b (Auto update panel_state_log.csv at 2025-11-28 12:34:23)
+2025-12-03T12:30:11,20251203_123011,/home/mohammed/Desktop/SolClear/captured/20251203_123010_1.jpg|/home/mohammed/Desktop/SolClear/captured/20251203_123011_2.jpg|/home/mohammed/Desktop/SolClear/captured/20251203_123012_3.jpg,0.783629,0.760153,0.766854,0.770212,clean,0,80.3148,81.8635,79.6789,80.6191,-0.130526,-0.991445,0.172250,0.077994
